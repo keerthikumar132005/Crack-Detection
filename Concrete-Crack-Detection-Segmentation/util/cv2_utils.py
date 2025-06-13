@@ -111,7 +111,9 @@ def getContours(npImage, overlay_img, realHeight, realWidth, unit, confidence, a
     
         P1 = min(top_p, bot_p, key=lambda x:x[0])
         P2 = max(top_p, bot_p, key=lambda x:x[0])
-        slope = (P1[1] - P2[1]) / (P2[0] - P1[0])
+        # Add small epsilon to prevent division by zero
+        epsilon = 1e-7
+        slope = (P1[1] - P2[1]) / (P2[0] - P1[0] + epsilon)
         cat = ''
         angle = 0        
         if slope > 0:

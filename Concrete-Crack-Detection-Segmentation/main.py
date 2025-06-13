@@ -1,9 +1,10 @@
 
 from typing import Union
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from pydantic import BaseModel
 from util.inference_utils import inference, create_model
 from typing import List, Optional
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from fastapi import UploadFile, File
 import io
@@ -12,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 import cv2
 from PIL import Image
+from ultralytics import YOLO
 import base64
 class Parameters(BaseModel):
     input_nc: int = 3
@@ -71,3 +73,37 @@ async def predict(dim:str, unit:str, file: UploadFile = File(...)):
         map_ = from_image_to_bytes(Image.fromarray(visuals[k]))
         img_list.append(map_)
     return img_list
+
+
+model = YOLO("best.pt")
+class_labels = [
+    'alligator_crack_high', 'alligator_crack_low', 'alligator_crack_medium',
+    'long_transverse_crack_high', 'long_transverse_crack_low', 'long_transverse_crack_medium'
+]
+
+@app.post("/yolo-predict")
+async def predict_cracks(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        nparr = np.frombuffer(contents, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        results = model(img)
+        result_img = results[0].plot()
+
+        _, img_encoded = cv2.imencode('.jpg', result_img)
+        base64_image = base64.b64encode(img_encoded).decode('utf-8')
+
+        return {
+            "image": base64_image,
+            "predictions": [
+                {
+                    "class": class_labels[int(box.cls.item())],
+                    "confidence": box.conf.item()
+                }
+                for box in results[0].boxes
+            ]
+        }
+    except Exception as e:
+        import traceback
+        raise HTTPException(status_code=500, detail=f"{e}\n{traceback.format_exc()}")

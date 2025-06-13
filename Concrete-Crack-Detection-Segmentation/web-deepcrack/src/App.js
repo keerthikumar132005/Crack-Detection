@@ -1,18 +1,22 @@
 import React from 'react';
-import Crack_Detection from './components/Crack_Detection';
+import Crack_Detection_CNN from './components/CNN/Crack_Detection';
 import {  Route, Routes } from 'react-router-dom';
 import Calculate_Decrease from './Calculate_Decrease';
 import HomePage from './components/HomePage';
 import ConcreteCrackUpload from './components/ConcreteCrackUpload';
+import SelectModel from './components/SelectModel';
+import CrackDetectionYOLO from './components/Yolo/CrackDetectionYOLO';
 
 function App() {
   
   return ( 
   <Routes>
-     <Route path="/compare" element={<Crack_Detection />} />
+     <Route path="/compare-cnn" element={<Crack_Detection_CNN />} />
      <Route path='/store' element={<ConcreteCrackUpload />} />
      <Route path="/" element={<HomePage />} />
+     <Route path="select-model" element={<SelectModel />} />
      <Route path='/calculate-decrease' element={<Calculate_Decrease />} />
+     <Route path='/compare-yolo' element={<CrackDetectionYOLO />} />
   </Routes>
 );
 }

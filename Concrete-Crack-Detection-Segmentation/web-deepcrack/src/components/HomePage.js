@@ -16,9 +16,9 @@ function HomePage() {
         </button>
         <button
           className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-md"
-          onClick={() => navigate('/compare')}
+          onClick={() => navigate('/select-model')}
         >
-          Compare Before/After Healing
+          Select Model
         </button>
       </div>
     </div>
