@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Spinner, Card, Row, Col } from 'react-bootstrap';
 import supabase from '../../utils/supabaseClient';
 import { supabaseConfig } from '../../config/supabaseConfig';
 
@@ -85,67 +84,89 @@ function SingleImagePredictionYOLO({ title, endpoint, onPrediction, supabaseFetc
   };
 
   return (
-    <Card>
-      <Card.Header><h3>{title}</h3></Card.Header>
-      <Card.Body>
-        <Form onSubmit={handleSubmit}>
-          {supabaseFetch ? (
-            <Form.Group className="mb-3">
-              <Form.Label>Select Crack</Form.Label>
-              <Form.Select value={selectedCrack || ''} onChange={handleSelectChange}>
-                {crackList.map(c => (
-                  <option key={c.crack_no} value={c.crack_no}>
-                    Crack {c.crack_no}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-          ) : (
-            <Form.Group className="mb-3">
-              <Form.Label>Upload Image</Form.Label>
-              <Form.Control type="file" accept="image/*" onChange={handleFileChange} />
-            </Form.Group>
-          )}
+    <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 text-white shadow-lg">
+      <h3 className="text-2xl font-semibold mb-4 text-cyan-300">{title}</h3>
 
-          <Row className="mb-3">
-            <Form.Group as={Col} controlId="formWidth">
-              <Form.Label>Width</Form.Label>
-              <Form.Control
-                type="number"
-                value={dimensions.Width}
-                onChange={e => setDimensions({ ...dimensions, Width: parseFloat(e.target.value) })}
-              />
-            </Form.Group>
-            <Form.Group as={Col} controlId="formHeight">
-              <Form.Label>Height</Form.Label>
-              <Form.Control
-                type="number"
-                value={dimensions.Height}
-                onChange={e => setDimensions({ ...dimensions, Height: parseFloat(e.target.value) })}
-              />
-            </Form.Group>
-            <Form.Group as={Col} controlId="formUnit">
-              <Form.Label>Unit</Form.Label>
-              <Form.Select value={unit} onChange={e => setUnit(e.target.value)}>
-                <option value="mm">mm</option>
-                <option value="cm">cm</option>
-                <option value="m">m</option>
-              </Form.Select>
-            </Form.Group>
-          </Row>
-
-          <Button variant="primary" type="submit" className="w-100" disabled={loading}>
-            {loading ? 'Predicting...' : 'Predict'}
-          </Button>
-        </Form>
-
-        {srcUrl && (
-          <div className="mt-3 text-center">
-            <img src={srcUrl} alt={title} style={{ maxWidth: '100%', maxHeight: 300 }} />
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {supabaseFetch ? (
+          <div>
+            <label className="block text-sm mb-1">Select Crack</label>
+            <select
+              className="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white"
+              value={selectedCrack || ''}
+              onChange={handleSelectChange}
+            >
+              {crackList.map(c => (
+                <option key={c.crack_no} value={c.crack_no}>
+                  Crack {c.crack_no}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm mb-1">Upload Image</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="w-full p-2 rounded bg-slate-800 text-white border border-slate-600"
+            />
           </div>
         )}
-      </Card.Body>
-    </Card>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm mb-1">Width</label>
+            <input
+              type="number"
+              className="w-full p-2 rounded bg-slate-800 text-white border border-slate-600"
+              value={dimensions.Width}
+              onChange={e => setDimensions({ ...dimensions, Width: parseFloat(e.target.value) })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm mb-1">Height</label>
+            <input
+              type="number"
+              className="w-full p-2 rounded bg-slate-800 text-white border border-slate-600"
+              value={dimensions.Height}
+              onChange={e => setDimensions({ ...dimensions, Height: parseFloat(e.target.value) })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm mb-1">Unit</label>
+            <select
+              value={unit}
+              onChange={e => setUnit(e.target.value)}
+              className="w-full p-2 rounded bg-slate-800 text-white border border-slate-600"
+            >
+              <option value="mm">mm</option>
+              <option value="cm">cm</option>
+              <option value="m">m</option>
+            </select>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          className="w-full mt-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded hover:scale-105 transition-transform"
+          disabled={loading}
+        >
+          {loading ? 'Predicting...' : 'Predict'}
+        </button>
+      </form>
+
+      {srcUrl && (
+        <div className="mt-5 text-center">
+          <img
+            src={srcUrl}
+            alt={title}
+            className="mx-auto max-h-72 rounded-lg border border-white/20 shadow-md"
+          />
+        </div>
+      )}
+    </div>
   );
 }
 

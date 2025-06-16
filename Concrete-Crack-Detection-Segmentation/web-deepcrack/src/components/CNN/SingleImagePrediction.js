@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Spinner, Card } from 'react-bootstrap';
 import supabase from '../../utils/supabaseClient';
 import { supabaseConfig } from '../../config/supabaseConfig';
 
@@ -25,7 +24,7 @@ function SingleImagePrediction({ title, onPrediction, onDimensionsChange, fetchF
             .order('crack_no', { ascending: true });
 
           if (error) throw error;
-          
+
           setCrackList(data || []);
           if (data.length > 0) {
             setSelectedCrack(data[0].crack_no);
@@ -36,15 +35,9 @@ function SingleImagePrediction({ title, onPrediction, onDimensionsChange, fetchF
               Height: data[0].Height || 1, 
               unit 
             });
-            
-            // Check if we have this image in localStorage
+
             const storedImage = localStorage.getItem(`crack_${data[0].crack_no}`);
-            if (storedImage) {
-              setSrcUrl(storedImage);
-            } else {
-              setSrcUrl(data[0].url);
-            }
-            
+            setSrcUrl(storedImage || data[0].url);
             setIsFilePicked(true);
           }
         } catch (err) {
@@ -62,13 +55,12 @@ function SingleImagePrediction({ title, onPrediction, onDimensionsChange, fetchF
     const file = event.target.files[0];
     setSelectedFile(file);
     setIsFilePicked(true);
-    
+
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const imageUrl = e.target.result;
         setSrcUrl(imageUrl);
-        // Store in localStorage if this is the "Before Healing" image
         if (fetchFromSupabase && selectedCrack) {
           localStorage.setItem(`crack_${selectedCrack}`, imageUrl);
         }
@@ -84,174 +76,145 @@ function SingleImagePrediction({ title, onPrediction, onDimensionsChange, fetchF
       setSelectedCrack(crackNo);
       setWidth(crack.Width || 1);
       setHeight(crack.Height || 1);
-      
-      // Check localStorage first
       const storedImage = localStorage.getItem(`crack_${crackNo}`);
-      if (storedImage) {
-        setSrcUrl(storedImage);
-      } else {
-        setSrcUrl(crack.url);
-      }
-      
-      onDimensionsChange({ 
-        Width: crack.Width || 1, 
-        Height: crack.Height || 1, 
-        unit 
-      });
+      setSrcUrl(storedImage || crack.url);
+      onDimensionsChange({ Width: crack.Width || 1, Height: crack.Height || 1, unit });
       setIsFilePicked(true);
     }
   };
 
-  const handleWidthChange = (event) => {
-    const value = parseFloat(event.target.value) || 0;
+  const handleWidthChange = (e) => {
+    const value = parseFloat(e.target.value) || 0;
     setWidth(value);
     onDimensionsChange({ Width: value, Height, unit });
   };
 
-  const handleHeightChange = (event) => {
-    const value = parseFloat(event.target.value) || 0;
+  const handleHeightChange = (e) => {
+    const value = parseFloat(e.target.value) || 0;
     setHeight(value);
     onDimensionsChange({ Width, Height: value, unit });
   };
 
-  const handleUnitChange = (event) => {
-    setUnit(event.target.value);
-    onDimensionsChange({ Width, Height, unit: event.target.value });
+  const handleUnitChange = (e) => {
+    const value = e.target.value;
+    setUnit(value);
+    onDimensionsChange({ Width, Height, unit: value });
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
       if (fetchFromSupabase && selectedCrack) {
         const crack = crackList.find(c => c.crack_no === selectedCrack);
-        if (crack) {
-          // Get image from localStorage or original URL
-          let imageUrl = localStorage.getItem(`crack_${selectedCrack}`) || crack.url;
-          
-          // Convert data URL to blob
-          const response = await fetch(imageUrl);
-          const blob = await response.blob();
-          
-          // Create a File object with proper metadata
-          const file = new File([blob], `crack_${selectedCrack}.jpg`, {
-            type: blob.type || 'image/jpeg',
-            lastModified: Date.now()
-          });
-          
-          // Verify file exists before proceeding
-          if (!file) {
-            throw new Error('Failed to create file object');
-          }
-  
-          const formData = new FormData();
-          formData.append("file", file);
-          onPrediction(formData, { Width, Height, unit });
-        }
+        let imageUrl = localStorage.getItem(`crack_${selectedCrack}`) || crack.url;
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `crack_${selectedCrack}.jpg`, {
+          type: blob.type || 'image/jpeg',
+          lastModified: Date.now()
+        });
+        const formData = new FormData();
+        formData.append("file", file);
+        onPrediction(formData, { Width, Height, unit });
       } else if (selectedFile) {
-        // For regular file uploads (After Healing)
         const formData = new FormData();
         formData.append("file", selectedFile, selectedFile.name);
         onPrediction(formData, { Width, Height, unit });
       }
     } catch (error) {
       console.error('Error in handleSubmit:', error);
-      // You might want to add error state handling here
     }
   };
 
   return (
-    <Card>
-      <Card.Header>
-        <h3>{title}</h3>
-      </Card.Header>
-      <Card.Body>
-        <Form onSubmit={handleSubmit}>
-          {fetchFromSupabase ? (
-            <Form.Group className="mb-3">
-              <Form.Label>Select Crack</Form.Label>
-              {loadingCracks ? (
-                <div className="text-center">
-                  <Spinner animation="border" />
-                  <p>Loading cracks...</p>
-                </div>
-              ) : (
-                <Form.Select 
-                  onChange={handleCrackChange}
-                  value={selectedCrack || ''}
-                >
-                  {crackList.map((crack) => (
-                    <option key={crack.crack_no} value={crack.crack_no}>
-                      Crack - {crack.crack_no}
-                    </option>
-                  ))}
-                </Form.Select>
-              )}
-            </Form.Group>
-          ) : (
-            <Form.Group className="mb-3">
-              <Form.Label>Upload Image</Form.Label>
-              <Form.Control 
-                type="file" 
-                onChange={changeHandler} 
-                accept=".jpeg, .png, .jpg"
-              />
-            </Form.Group>
-          )}
-          
-          <Form.Group className="mb-3">
-            <Form.Label>Real width</Form.Label>
-            <Form.Control
-              type="number"
-              placeholder="Enter width"
-              value={Width}
-              onChange={handleWidthChange}
-            />
-          </Form.Group>
-          
-          <Form.Group className="mb-3">
-            <Form.Label>Real height</Form.Label>
-            <Form.Control
-              type="number"
-              placeholder="Enter height"
-              value={Height}
-              onChange={handleHeightChange}
-            />
-          </Form.Group>
-          
-          <Form.Group className="mb-3">
-            <Form.Label>Measurement unit</Form.Label>
-            <Form.Select
-              value={unit}
-              onChange={handleUnitChange}
-            >
-              <option value="mm">Millimeters</option>
-              <option value="m">Meters</option>
-              <option value="cm">Centimeters</option>
-            </Form.Select>
-          </Form.Group>
-          
-          <Button
-            variant="primary"
-            type="submit"
-            disabled={fetchFromSupabase ? !selectedCrack : !isFilePicked}
-            className="w-100"
-          >
-            Predict
-          </Button>
-        </Form>
-        
-        {srcUrl && (
-          <div className="mt-3 text-center">
-            <img 
-              src={srcUrl} 
-              style={{ maxWidth: '100%', maxHeight: '300px' }}
-              alt={fetchFromSupabase ? `Crack #${selectedCrack}` : "Uploaded preview"} 
+    <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl backdrop-blur-lg border border-white/10">
+      <h3 className="text-2xl font-bold text-indigo-300 mb-4">{title}</h3>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {fetchFromSupabase ? (
+          <div>
+            <label className="block text-sm font-medium text-cyan-300 mb-1">Select Crack</label>
+            {loadingCracks ? (
+              <p className="text-pink-300">Loading cracks...</p>
+            ) : (
+              <select
+                onChange={handleCrackChange}
+                value={selectedCrack || ''}
+                className="w-full p-2 rounded-lg bg-slate-800 text-white border border-white/20"
+              >
+                {crackList.map((crack) => (
+                  <option key={crack.crack_no} value={crack.crack_no}>
+                    Crack - {crack.crack_no}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-cyan-300 mb-1">Upload Image</label>
+            <input
+              type="file"
+              onChange={changeHandler}
+              accept=".jpeg, .png, .jpg"
+              className="w-full p-2 rounded-lg bg-slate-800 text-white border border-white/20"
             />
           </div>
         )}
-      </Card.Body>
-    </Card>
+
+        <div>
+          <label className="block text-sm font-medium text-cyan-300 mb-1">Real Width</label>
+          <input
+            type="number"
+            value={Width}
+            onChange={handleWidthChange}
+            placeholder="Enter width"
+            className="w-full p-2 rounded-lg bg-slate-800 text-white border border-white/20"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-cyan-300 mb-1">Real Height</label>
+          <input
+            type="number"
+            value={Height}
+            onChange={handleHeightChange}
+            placeholder="Enter height"
+            className="w-full p-2 rounded-lg bg-slate-800 text-white border border-white/20"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-cyan-300 mb-1">Measurement Unit</label>
+          <select
+            value={unit}
+            onChange={handleUnitChange}
+            className="w-full p-2 rounded-lg bg-slate-800 text-white border border-white/20"
+          >
+            <option value="mm">Millimeters</option>
+            <option value="cm">Centimeters</option>
+            <option value="m">Meters</option>
+          </select>
+        </div>
+
+        <button
+          type="submit"
+          disabled={fetchFromSupabase ? !selectedCrack : !isFilePicked}
+          className="w-full py-2 mt-4 rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold hover:opacity-90"
+        >
+          Predict
+        </button>
+      </form>
+
+      {srcUrl && (
+        <div className="mt-4 text-center">
+          <img
+            src={srcUrl}
+            alt={fetchFromSupabase ? `Crack #${selectedCrack}` : "Uploaded preview"}
+            className="max-w-full max-h-72 mx-auto rounded-lg border border-white/20 shadow-lg"
+          />
+        </div>
+      )}
+    </div>
   );
 }
 

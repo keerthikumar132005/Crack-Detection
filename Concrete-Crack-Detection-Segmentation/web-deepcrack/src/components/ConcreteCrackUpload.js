@@ -14,7 +14,6 @@ const ConcreteCrackUpload = () => {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch next crack number on component mount
   useEffect(() => {
     const fetchNextCrackNo = async () => {
       try {
@@ -23,13 +22,13 @@ const ConcreteCrackUpload = () => {
           .select('crack_no')
           .order('crack_no', { ascending: false })
           .limit(1);
-        
+
         if (error) throw error;
-        
+
         setNextCrackNo(data.length ? data[0].crack_no + 1 : 1);
       } catch (err) {
         console.error('Error fetching crack number:', err.message);
-        setNextCrackNo(1); // Fallback to 1 if error occurs
+        setNextCrackNo(1);
       }
     };
 
@@ -50,14 +49,12 @@ const ConcreteCrackUpload = () => {
     const fileName = `${uuidv4()}.${fileExt}`;
     const filePath = `uploads/${fileName}`;
 
-    // Upload the file
     const { error: uploadError } = await supabase.storage
       .from(supabaseConfig.bucketName)
       .upload(filePath, file);
 
     if (uploadError) throw uploadError;
 
-    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from(supabaseConfig.bucketName)
       .getPublicUrl(filePath);
@@ -70,7 +67,7 @@ const ConcreteCrackUpload = () => {
       crack_no: nextCrackNo,
       url,
       Width: width || null,
-      Height: height || null
+      Height: height || null,
     };
 
     const { data, error } = await supabase
@@ -79,7 +76,7 @@ const ConcreteCrackUpload = () => {
       .select();
 
     if (error) throw error;
-    
+
     return data[0];
   };
 
@@ -97,23 +94,11 @@ const ConcreteCrackUpload = () => {
         throw new Error('Failed to generate crack number');
       }
 
-      // Step 1: Upload image
       const imageUrl = await uploadImageToSupabase(formData.image);
-      
-      // Step 2: Create record
-      await createImageRecord(
-        imageUrl,
-        formData.Width,
-        formData.Height
-      );
+      await createImageRecord(imageUrl, formData.Width, formData.Height);
 
       setUploadSuccess(true);
-      // Reset form and get next crack number
-      setFormData({
-        image: null,
-        Width: '',
-        Height: '',
-      });
+      setFormData({ image: null, Width: '', Height: '' });
       setNextCrackNo(nextCrackNo + 1);
     } catch (err) {
       setError(err.message);
@@ -123,41 +108,34 @@ const ConcreteCrackUpload = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">Concrete Crack Image Upload</h2>
-      
+    <div className="max-w-md mx-auto p-6 rounded-xl shadow-lg bg-slate-800/70 backdrop-blur-md border border-white/10 text-white">
+      <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 text-transparent bg-clip-text">
+        Concrete Crack Image Upload
+      </h2>
+
       {nextCrackNo && (
-        <div className="mb-4 p-2 bg-blue-50 text-blue-800 rounded">
-          Next Crack Number: <span className="font-bold">{nextCrackNo}</span>
+        <div className="mb-4 p-3 rounded bg-gradient-to-r from-indigo-700 to-purple-600 text-white font-semibold shadow-inner">
+          Next Crack Number: <span className="text-cyan-300">{nextCrackNo}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Image Upload */}
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-cyan-300 mb-1">
             Crack Image
           </label>
-          <div className="mt-1 flex items-center">
-            <input
-              type="file"
-              name="image"
-              accept="image/*"
-              onChange={handleChange}
-              required
-              className="block w-full text-sm text-gray-500
-                file:mr-4 file:py-2 file:px-4
-                file:rounded-md file:border-0
-                file:text-sm file:font-semibold
-                file:bg-blue-50 file:text-blue-700
-                hover:file:bg-blue-100"
-            />
-          </div>
+          <input
+            type="file"
+            name="image"
+            accept="image/*"
+            onChange={handleChange}
+            required
+            className="block w-full text-sm text-white bg-slate-900/60 rounded-md border border-cyan-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-cyan-500 file:text-slate-900 hover:file:bg-cyan-400"
+          />
         </div>
 
-        {/* Width */}
         <div>
-          <label htmlFor="width" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="width" className="block text-sm font-semibold text-purple-300 mb-1">
             Width (mm)
           </label>
           <input
@@ -167,13 +145,12 @@ const ConcreteCrackUpload = () => {
             id="Width"
             value={formData.Width}
             onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="mt-1 block w-full px-3 py-2 bg-slate-900/60 text-white border border-purple-500 rounded-md shadow-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
           />
         </div>
 
-        {/* Height */}
         <div>
-          <label htmlFor="height" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="height" className="block text-sm font-semibold text-pink-300 mb-1">
             Height (mm)
           </label>
           <input
@@ -183,30 +160,32 @@ const ConcreteCrackUpload = () => {
             id="Height"
             value={formData.Height}
             onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="mt-1 block w-full px-3 py-2 bg-slate-900/60 text-white border border-pink-400 rounded-md shadow-sm focus:ring-2 focus:ring-pink-300 focus:outline-none"
           />
         </div>
 
-        {/* Submit Button */}
         <div>
           <button
             type="submit"
             disabled={uploading || !nextCrackNo}
-            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${uploading || !nextCrackNo ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+            className={`w-full flex justify-center py-2 px-4 rounded-md text-sm font-medium text-white transition duration-200 ${
+              uploading || !nextCrackNo
+                ? 'bg-gradient-to-r from-slate-500 to-slate-600 cursor-not-allowed'
+                : 'bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500'
+            }`}
           >
             {uploading ? 'Uploading...' : 'Upload Crack Image'}
           </button>
         </div>
 
-        {/* Status Messages */}
         {error && (
-          <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          <div className="p-3 bg-red-500/20 border border-red-400 text-red-300 rounded shadow">
             {error}
           </div>
         )}
 
         {uploadSuccess && (
-          <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+          <div className="p-3 bg-green-500/20 border border-emerald-400 text-emerald-300 rounded shadow">
             Image uploaded successfully! Next crack number: {nextCrackNo}
           </div>
         )}
