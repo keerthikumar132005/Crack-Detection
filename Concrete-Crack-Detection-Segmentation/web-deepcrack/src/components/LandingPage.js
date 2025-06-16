@@ -46,7 +46,7 @@ export default function LandingPage() {
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-50 px-6 py-4">
+      <nav className="relative px-6 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
             SHC AI

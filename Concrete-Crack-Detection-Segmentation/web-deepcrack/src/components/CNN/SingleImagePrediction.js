@@ -27,17 +27,19 @@ function SingleImagePrediction({ title, onPrediction, onDimensionsChange, fetchF
 
           setCrackList(data || []);
           if (data.length > 0) {
-            setSelectedCrack(data[0].crack_no);
-            setWidth(data[0].Width || 1);
-            setHeight(data[0].Height || 1);
+            const crack = data[0];
+            setSelectedCrack(crack.crack_no);
+            setWidth(crack.Width || 1);
+            setHeight(crack.Height || 1);
             onDimensionsChange({ 
-              Width: data[0].Width || 1, 
-              Height: data[0].Height || 1, 
-              unit 
+              Width: crack.Width || 1, 
+              Height: crack.Height || 1, 
+              unit,
+              metrics: crack
             });
 
-            const storedImage = localStorage.getItem(`crack_${data[0].crack_no}`);
-            setSrcUrl(storedImage || data[0].url);
+            const storedImage = localStorage.getItem(`crack_${crack.crack_no}`);
+            setSrcUrl(storedImage || crack.url);
             setIsFilePicked(true);
           }
         } catch (err) {
@@ -78,7 +80,7 @@ function SingleImagePrediction({ title, onPrediction, onDimensionsChange, fetchF
       setHeight(crack.Height || 1);
       const storedImage = localStorage.getItem(`crack_${crackNo}`);
       setSrcUrl(storedImage || crack.url);
-      onDimensionsChange({ Width: crack.Width || 1, Height: crack.Height || 1, unit });
+      onDimensionsChange({ Width: crack.Width || 1, Height: crack.Height || 1, unit, metrics: crack });
       setIsFilePicked(true);
     }
   };
@@ -115,7 +117,7 @@ function SingleImagePrediction({ title, onPrediction, onDimensionsChange, fetchF
         });
         const formData = new FormData();
         formData.append("file", file);
-        onPrediction(formData, { Width, Height, unit });
+        onPrediction(formData, { Width, Height, unit, metrics: crack });
       } else if (selectedFile) {
         const formData = new FormData();
         formData.append("file", selectedFile, selectedFile.name);

@@ -1,13 +1,14 @@
 
 from typing import Union
 from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from util.inference_utils import inference, create_model
 from typing import List, Optional
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from fastapi import UploadFile, File
-import io
+from io import BytesIO
 from starlette.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
@@ -44,35 +45,45 @@ app.add_middleware(
 def read_root():
     return {"Hello": "World"}
 
-def from_image_to_bytes(img):
-    """
-    pillow image to bytes
-    """
-    imgByteArr = io.BytesIO()
-    img.save(imgByteArr, format='png')
-    imgByteArr = imgByteArr.getvalue()
 
-    encoded = base64.b64encode(imgByteArr)
-    decoded = encoded.decode('ascii')
-    return decoded
+def image_to_base64(img: Image.Image) -> str:
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-#python-multipart
 @app.post("/predict/{dim}/{unit}")
-async def predict(dim:str, unit:str, file: UploadFile = File(...)):
+async def predict(dim: str, unit: str, file: UploadFile = File(...)):
     bytesImg = await file.read()
     width, height = [float(x) for x in dim.split('-')]    
+
     parameters = Parameters()
     model = create_model(parameters)
-    predicted_cntr, visuals = inference(model, bytesImg, (width, height), unit) # Outputs Predicted Masks
 
-    cntr_converted = from_image_to_bytes(Image.fromarray(predicted_cntr))
-    
-    img_list = [cntr_converted]
-    
+    result_img, visuals, metrics = inference(model, bytesImg, (width, height), unit)
+
+    # Convert result image to base64
+    result_b64 = image_to_base64(Image.fromarray(result_img))
+
+    # Convert all visual maps to base64
+    visuals_b64 = {}
     for k in ['fused', 'side1', 'side2', 'side3', 'side4', 'side5']:
-        map_ = from_image_to_bytes(Image.fromarray(visuals[k]))
-        img_list.append(map_)
-    return img_list
+        visuals_b64[k] = image_to_base64(Image.fromarray(visuals[k]))
+
+    # Combine response
+    response = {
+        "result_image": result_b64,
+        "visuals": visuals_b64,
+        "metrics": {
+            "length_mm": round(metrics["length"], 1),
+            "width_mm": round(metrics["width"], 1),
+            "angle_deg": round(metrics["angle"], 1),
+            "category": metrics["category"],
+            "crack_percentage": round(metrics["crack_percentage"] * 100, 2)
+        }
+    }
+
+    return JSONResponse(content=response)
+
 
 
 model = YOLO("best.pt")

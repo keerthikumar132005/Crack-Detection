@@ -124,9 +124,18 @@ def inference(model, bytesImg, dim, unit):
     
     overlay_img = overlay(tensor2im(image), mask, alpha=0)
     cv2.drawContours(image=overlay_img, contours=cnts[0], contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
-    contour_img = getContours(fused, overlay_img, realHeight, realWidth, unit, confidence)
+    result_img, L, W, angle, category, crack_percentage = getContours(
+    fused, overlay_img, realHeight, realWidth, unit, confidence
+)
 
-    return contour_img if contour_img is not None else overlay_img, visuals
+    return result_img, visuals, {
+    "length": L,
+    "width": W,
+    "angle": angle,
+    "category": category,
+    "crack_percentage": crack_percentage
+}
+
     
 
     
