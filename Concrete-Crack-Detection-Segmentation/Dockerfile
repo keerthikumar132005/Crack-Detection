@@ -1,19 +1,27 @@
-# Base image with Python 3.10
 FROM python:3.10-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Set working directory inside container
+# Set working directory
 WORKDIR /app
 
-# Copy requirements and install them
+# Install system dependencies (libgl and others)
+RUN apt-get update && apt-get install -y \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the app
+# Copy project files
 COPY . .
 
-# Default command to run the app
-CMD ["uvicorn", "main:app", "--host=0.0.0.0", "--port=80"]
+# Expose port
+EXPOSE 8000
+
+# Run FastAPI app
+CMD ["uvicorn", "main:app", "--host=0.0.0.0", "--port=8000"]
