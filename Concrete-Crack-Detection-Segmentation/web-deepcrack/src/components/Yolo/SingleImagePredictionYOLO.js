@@ -70,12 +70,7 @@ function SingleImagePredictionYOLO({ title, endpoint, onPrediction, supabaseFetc
       const res = await fetch(endpoint, { method: 'POST', body: formData });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const json = await res.json();
-      console.log(json)
-      onPrediction({
-        image: json.image,
-        predictions: json.predictions,
-        dimensions: { ...dimensions, unit }
-      });
+      onPrediction(json);
     } catch (err) {
       console.error(err);
     } finally {

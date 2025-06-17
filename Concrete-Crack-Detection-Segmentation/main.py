@@ -1,6 +1,6 @@
 
 from typing import Union
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException,Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from util.inference_utils import inference, create_model
@@ -92,29 +92,91 @@ class_labels = [
     'long_transverse_crack_high', 'long_transverse_crack_low', 'long_transverse_crack_medium'
 ]
 
+
 @app.post("/yolo-predict")
-async def predict_cracks(file: UploadFile = File(...)):
+async def predict_cracks(
+    file: UploadFile = File(...),
+    pixel_mm: float = Query(0.2, description="Physical size of one image pixel in millimeters (default = 0.2)")
+):
     try:
+        # Read and decode the image
         contents = await file.read()
         nparr = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        h_px, w_px = img.shape[:2]
 
-        results = model(img)
-        result_img = results[0].plot()
+        # Convert overall image size to mm
+        image_width_mm = round(w_px * pixel_mm, 2)
+        image_height_mm = round(h_px * pixel_mm, 2)
 
+        # Run YOLO inference
+        results = model(img)[0]
+        result_img = results.plot()  # annotated image
+
+        # 1) Compute union area by rasterizing boxes
+        box_mask = np.zeros((h_px, w_px), dtype=np.uint8)
+        for box in results.boxes:
+            x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+            cv2.rectangle(box_mask, (x1, y1), (x2, y2), color=1, thickness=-1)
+        union_area_px = int(box_mask.sum())
+
+        # 2) Prefer segmentation masks if available
+        if results.masks is not None:
+            masks = results.masks.data.cpu().numpy()  # (N, H, W)
+            combined = np.clip(masks.sum(axis=0), 0, 1).astype(np.uint8)
+            union_area_px = int(combined.sum())
+
+        # Calculate crack coverage percentage
+        crack_percentage = round((union_area_px / (h_px * w_px)) * 100, 2)
+
+        # Convert union area to mm^2
+        union_area_mm2 = round(union_area_px * (pixel_mm ** 2), 2)
+
+        # Build detailed predictions
+        predictions = []
+        for box in results.boxes:
+            x1, y1, x2, y2 = box.xyxy[0].tolist()
+            bx_w_px = x2 - x1
+            bx_h_px = y2 - y1
+            area_px = int(bx_w_px * bx_h_px)
+
+            # Convert to mm
+            bx_w_mm = round(bx_w_px * pixel_mm, 2)
+            bx_h_mm = round(bx_h_px * pixel_mm, 2)
+            area_mm2 = round(area_px * (pixel_mm ** 2), 2)
+
+            cls_idx = int(box.cls.item())
+            label = class_labels[cls_idx] if cls_idx < len(class_labels) else "unknown"
+
+            predictions.append({
+                "class": label,
+                "confidence": round(float(box.conf), 2),
+                "bounding_box_px": {
+                    "x_min": int(x1),
+                    "y_min": int(y1),
+                    "x_max": int(x2),
+                    "y_max": int(y2)
+                },
+                "bounding_box_mm": {
+                    "width": bx_w_mm,
+                    "height": bx_h_mm
+                },
+                "area_mm2": area_mm2
+            })
+
+        # Encode annotated image back to base64
         _, img_encoded = cv2.imencode('.jpg', result_img)
         base64_image = base64.b64encode(img_encoded).decode('utf-8')
 
+        # Return JSON response
         return {
             "image": base64_image,
-            "predictions": [
-                {
-                    "class": class_labels[int(box.cls.item())],
-                    "confidence": box.conf.item()
-                }
-                for box in results[0].boxes
-            ]
+            "image_width_mm": image_width_mm,
+            "image_height_mm": image_height_mm,
+            "crack_percentage": crack_percentage,
+            "total_crack_area_mm2": union_area_mm2,
+            "predictions": predictions
         }
+
     except Exception as e:
-        import traceback
-        raise HTTPException(status_code=500, detail=f"{e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))

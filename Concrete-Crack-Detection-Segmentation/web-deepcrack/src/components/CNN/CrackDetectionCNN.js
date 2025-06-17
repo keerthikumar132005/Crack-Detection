@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SingleImagePrediction from './SingleImagePrediction';
-import { calculateAreaDecreasePercent } from '../../utils/Calculate_Decrease';
+import { calculateAreaDecreasePercent } from '../../utils/Calculate_Decrease_CNN';
 
 function CrackDetectionCNN() {  
   const navigate = useNavigate();
