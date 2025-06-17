@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.tmp
+.env
+.idea/
+.vscode/
+./web-deepcrack
+./util/__pycache__
