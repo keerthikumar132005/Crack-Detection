@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import supabase from '../../utils/supabaseClient';
 import { supabaseConfig } from '../../config/supabaseConfig';
 
+const api_key = process.env.REACT_APP_API_KEY;
+
 function SingleImagePredictionYOLO({ title, endpoint, onPrediction, supabaseFetch }) {
   const [loading, setLoading] = useState(false);
   const [crackList, setCrackList] = useState([]);
@@ -67,7 +69,7 @@ function SingleImagePredictionYOLO({ title, endpoint, onPrediction, supabaseFetc
       const formData = new FormData();
       formData.append('file', fileToUpload);
 
-      const res = await fetch(endpoint, { method: 'POST', body: formData });
+      const res = await fetch(endpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${api_key}` }, body: formData });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const json = await res.json();
       onPrediction(json);

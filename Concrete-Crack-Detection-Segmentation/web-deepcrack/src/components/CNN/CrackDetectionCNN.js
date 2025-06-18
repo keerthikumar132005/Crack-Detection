@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import SingleImagePrediction from './SingleImagePrediction';
 import { calculateAreaDecreasePercent } from '../../utils/Calculate_Decrease_CNN';
 
+const api_key = process.env.REACT_APP_API_KEY;
+const api_url = process.env.REACT_APP_API_URL;
+
 function CrackDetectionCNN() {  
   const navigate = useNavigate();
   const [beforeData, setBeforeData] = useState(null);
@@ -38,8 +41,11 @@ function CrackDetectionCNN() {
       if (!file) throw new Error('No file found in form data');
 
       const response = await fetch(
-        `http://127.0.0.1:8000/predict/${dimensions.Width}-${dimensions.Height}/${dimensions.unit}`,
+        `${api_url}/predict/${dimensions.Width}-${dimensions.Height}/${dimensions.unit}`,
         {
+          headers: {
+            'Authorization': `Bearer ${api_key}`,
+          },
           method: 'POST',
           body: formData,
         }

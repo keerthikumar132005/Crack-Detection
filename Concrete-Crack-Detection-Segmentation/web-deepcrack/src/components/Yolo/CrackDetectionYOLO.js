@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SingleImagePredictionYOLO from './SingleImagePredictionYOLO';
 import calculateCrackReductionSummary from '../../utils/Calculate_Decrease_Yolo';
+
+
+const api_url = process.env.REACT_APP_API_URL;
+
 function CrackDetectionYOLO() {
   const navigate = useNavigate();
   const [beforeData, setBeforeData] = useState(null);
@@ -87,13 +91,13 @@ function CrackDetectionYOLO() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <SingleImagePredictionYOLO
           title="Before Healing"
-          endpoint="http://127.0.0.1:8000/yolo-predict"
+          endpoint={`${api_url}/yolo-predict`}
           onPrediction={setBeforeData}
           supabaseFetch={true}
         />
         <SingleImagePredictionYOLO
           title="After Healing"
-          endpoint="http://127.0.0.1:8000/yolo-predict"
+          endpoint={`${api_url}/yolo-predict`}
           onPrediction={setAfterData}
           supabaseFetch={false}
         />
