@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   FaHome,
   FaStore,
@@ -7,7 +7,7 @@ import {
   FaTimes,
   FaEye,
   FaBrain,
-} from 'react-icons/fa';
+} from "react-icons/fa";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -18,10 +18,10 @@ export default function Navbar() {
   }, [pathname]);
 
   const links = [
-    { to: '/', label: 'Landing', icon: <FaHome /> },
-    { to: '/home', label: 'Home', icon: <FaHome /> },
-    { to: '/store', label: 'Store', icon: <FaStore /> },
-    { to: '/select-model', label: 'Analyze', icon: <FaBrain /> },
+    { to: "/", label: "Landing", icon: <FaHome /> },
+    { to: "/home", label: "Home", icon: <FaHome /> },
+    { to: "/store", label: "Store", icon: <FaStore /> },
+    { to: "/select-model", label: "Analyze", icon: <FaBrain /> },
   ];
 
   return (
@@ -31,13 +31,13 @@ export default function Navbar() {
         <div className="flex items-center gap-2 text-xl font-bold">
           <FaEye className="text-blue-400" />
           <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            CrackVision
+            DigitalTouchCorp
           </span>
         </div>
 
         {/* Mobile Menu Toggle */}
         <button
-          onClick={() => setMenuOpen(prev => !prev)}
+          onClick={() => setMenuOpen((prev) => !prev)}
           className="md:hidden p-2 rounded focus:outline-none"
         >
           {menuOpen ? <FaTimes /> : <FaBars />}
@@ -46,7 +46,7 @@ export default function Navbar() {
         {/* Nav Links */}
         <nav
           className={`md:flex md:items-center md:space-x-6 ${
-            menuOpen ? 'block' : 'hidden'
+            menuOpen ? "block" : "hidden"
           } absolute md:static top-full left-0 w-full md:w-auto bg-slate-800 md:bg-transparent py-4 md:py-0`}
         >
           <div className="flex flex-col md:flex-row md:items-center md:space-x-6 px-4 md:px-0">
@@ -57,8 +57,8 @@ export default function Navbar() {
                 className={({ isActive }) =>
                   `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
                     isActive
-                      ? 'bg-blue-700 text-white'
-                      : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                      ? "bg-blue-700 text-white"
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
                   }`
                 }
               >
