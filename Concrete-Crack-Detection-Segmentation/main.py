@@ -1,6 +1,6 @@
 
 from typing import Union
-from fastapi import FastAPI, File, UploadFile, HTTPException,Query
+from fastapi import FastAPI, File, UploadFile, HTTPException,Query,Body
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from util.inference_utils import inference, create_model
@@ -16,6 +16,8 @@ import cv2
 from PIL import Image
 from ultralytics import YOLO
 import base64
+import requests
+
 class Parameters(BaseModel):
     input_nc: int = 3
     output_nc: int = 3
@@ -176,6 +178,60 @@ async def predict_cracks(
             "crack_percentage": crack_percentage,
             "total_crack_area_mm2": union_area_mm2,
             "predictions": predictions
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+from recommendations import recommend_healing_agent, generate_synthetic_data
+
+synthetic_df = generate_synthetic_data(num_samples_per_technique=100)
+
+# Your OpenWeatherMap API key (replace with your actual key)
+OPENWEATHER_API_KEY = "cd00e7788b0875d723c6def73b8c16e7"
+
+def get_weather(lat, lon):
+    """
+    Fetch current temperature (°C) and humidity (%) using OpenWeather API.
+    """
+    url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}&units=metric"
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Failed to fetch weather data.")
+    
+    data = response.json()
+    temperature = data["main"]["temp"]
+    humidity = data["main"]["humidity"]
+    return temperature, humidity
+
+
+@app.post("/recommendation")
+async def get_recommendation_post(payload: dict = Body(...)):
+    try:
+        crack_width = payload.get("crack_width")
+        lat = payload.get("latitude")
+        lon = payload.get("longitude")
+        if crack_width is None or lat is None or lon is None:
+            raise HTTPException(status_code=400, detail="Missing required fields: crack_width, latitude, longitude.")
+
+        # Step 1: Get real-time weather
+        temperature, humidity = get_weather(lat, lon)
+
+        # Step 2: Generate recommendations
+        recommended_methods = recommend_healing_agent(crack_width, temperature, humidity, synthetic_df)
+
+        # Step 3: Return full response
+        return {
+            "crack_width_mm": crack_width,
+            "location": {
+                "latitude": lat,
+                "longitude": lon
+            },
+            "weather": {
+                "temperature_C": temperature,
+                "humidity_%": humidity
+            },
+            "recommended_methods": recommended_methods
         }
 
     except Exception as e:
