@@ -7,6 +7,7 @@ import {
   FaTimes,
   FaEye,
   FaBrain,
+  FaLightbulb,
 } from "react-icons/fa";
 
 export default function Navbar() {
@@ -21,6 +22,7 @@ export default function Navbar() {
     { to: "/", label: "Landing", icon: <FaHome /> },
     { to: "/home", label: "Home", icon: <FaHome /> },
     { to: "/store", label: "Store", icon: <FaStore /> },
+    {to:"/recommendations",label:"Recommendations",icon:<FaLightbulb />},
     { to: "/select-model", label: "Analyze", icon: <FaBrain /> },
   ];
 

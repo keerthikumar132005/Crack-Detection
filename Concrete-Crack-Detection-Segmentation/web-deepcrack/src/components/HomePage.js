@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaDatabase, FaBrain } from 'react-icons/fa';
+import { FaDatabase, FaBrain ,FaLightbulb} from 'react-icons/fa';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 
@@ -35,7 +35,7 @@ function HomePage() {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, ease: 'easeOut' }}
-        className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl p-10 text-center max-w-lg w-full"
+        className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl p-10 text-center max-w-[700px] w-full"
       >
         <h1 className="text-4xl font-extrabold text-purple-300 mb-8 drop-shadow-md">
           Concrete Crack Analysis
@@ -54,6 +54,13 @@ function HomePage() {
             className="flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-lg font-semibold shadow-lg hover:scale-105 transition-transform duration-200 hover:shadow-pink-400/50"
           >
             <FaBrain size={22} />Analyze Cracks
+          </button>
+
+          <button
+            onClick={() => navigate('/recommendations')}
+            className="flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-lg font-semibold shadow-lg hover:scale-105 transition-transform duration-200 hover:shadow-cyan-400/50"
+          >
+            <FaLightbulb size={22} />Recommendations
           </button>
         </div>
       </motion.div>

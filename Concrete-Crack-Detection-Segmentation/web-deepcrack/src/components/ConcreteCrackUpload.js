@@ -8,11 +8,15 @@ const ConcreteCrackUpload = () => {
     image: null,
     Width: '',
     Height: '',
+    latitude: '',
+    longitude: ''
   });
   const [nextCrackNo, setNextCrackNo] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [error, setError] = useState(null);
+  const [locationStatus, setLocationStatus] = useState('idle'); // 'idle', 'fetching', 'success', 'error'
+  const [geoError, setGeoError] = useState(null);
 
   useEffect(() => {
     const fetchNextCrackNo = async () => {
@@ -44,6 +48,32 @@ const ConcreteCrackUpload = () => {
     }
   };
 
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setGeoError("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setLocationStatus('fetching');
+    setGeoError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData(prev => ({
+          ...prev,
+          latitude: position.coords.latitude.toString(),
+          longitude: position.coords.longitude.toString()
+        }));
+        setLocationStatus('success');
+      },
+      (err) => {
+        setGeoError(`Unable to retrieve location: ${err.message}`);
+        setLocationStatus('error');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const uploadImageToSupabase = async (file) => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${uuidv4()}.${fileExt}`;
@@ -62,12 +92,14 @@ const ConcreteCrackUpload = () => {
     return publicUrl;
   };
 
-  const createImageRecord = async (url, width, height) => {
+  const createImageRecord = async (url, width, height, lat, lng) => {
     const payload = {
       crack_no: nextCrackNo,
       url,
       Width: width || null,
       Height: height || null,
+      latitude: lat ? parseFloat(lat) : null,
+      longitude: lng ? parseFloat(lng) : null
     };
 
     const { data, error } = await supabase
@@ -94,11 +126,37 @@ const ConcreteCrackUpload = () => {
         throw new Error('Failed to generate crack number');
       }
 
+      // Validate coordinates if provided
+      if (formData.latitude && formData.longitude) {
+        const lat = parseFloat(formData.latitude);
+        const lng = parseFloat(formData.longitude);
+        
+        if (isNaN(lat) || isNaN(lng)) {
+          throw new Error('Invalid coordinates format');
+        }
+        
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+          throw new Error('Coordinates out of valid range');
+        }
+      }
+
       const imageUrl = await uploadImageToSupabase(formData.image);
-      await createImageRecord(imageUrl, formData.Width, formData.Height);
+      await createImageRecord(
+        imageUrl, 
+        formData.Width, 
+        formData.Height,
+        formData.latitude,
+        formData.longitude
+      );
 
       setUploadSuccess(true);
-      setFormData({ image: null, Width: '', Height: '' });
+      setFormData({ 
+        image: null, 
+        Width: '', 
+        Height: '',
+        latitude: '',
+        longitude: ''
+      });
       setNextCrackNo(nextCrackNo + 1);
     } catch (err) {
       setError(err.message);
@@ -134,34 +192,100 @@ const ConcreteCrackUpload = () => {
           />
         </div>
 
-        <div>
-          <label htmlFor="width" className="block text-sm font-semibold text-purple-300 mb-1">
-            Width (mm)
-          </label>
-          <input
-            type="number"
-            step="0.01"
-            name="Width"
-            id="Width"
-            value={formData.Width}
-            onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 bg-slate-900/60 text-white border border-purple-500 rounded-md shadow-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="Width" className="block text-sm font-semibold text-purple-300 mb-1">
+              Width (mm)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              name="Width"
+              id="Width"
+              value={formData.Width}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 bg-slate-900/60 text-white border border-purple-500 rounded-md shadow-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="Height" className="block text-sm font-semibold text-pink-300 mb-1">
+              Height (mm)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              name="Height"
+              id="Height"
+              value={formData.Height}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 bg-slate-900/60 text-white border border-pink-400 rounded-md shadow-sm focus:ring-2 focus:ring-pink-300 focus:outline-none"
+            />
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="height" className="block text-sm font-semibold text-pink-300 mb-1">
-            Height (mm)
-          </label>
-          <input
-            type="number"
-            step="0.01"
-            name="Height"
-            id="Height"
-            value={formData.Height}
-            onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 bg-slate-900/60 text-white border border-pink-400 rounded-md shadow-sm focus:ring-2 focus:ring-pink-300 focus:outline-none"
-          />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <label className="block text-sm font-semibold text-emerald-300 mb-1">
+              Location Coordinates
+            </label>
+            <button
+              type="button"
+              onClick={getCurrentLocation}
+              disabled={locationStatus === 'fetching'}
+              className={`text-xs px-3 py-1 rounded-md ${
+                locationStatus === 'fetching'
+                  ? 'bg-slate-600 text-slate-300 cursor-not-allowed'
+                  : 'bg-emerald-600/70 hover:bg-emerald-500/70 text-emerald-100'
+              }`}
+            >
+              {locationStatus === 'fetching' ? 'Getting Location...' : 'Use Current Location'}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="latitude" className="block text-xs text-slate-300 mb-1">
+                Latitude
+              </label>
+              <input
+                type="text"
+                name="latitude"
+                id="latitude"
+                value={formData.latitude}
+                onChange={handleChange}
+                placeholder="e.g., 12.3456"
+                className="mt-1 block w-full px-3 py-2 bg-slate-900/60 text-white border border-emerald-500/50 rounded-md shadow-sm focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="longitude" className="block text-xs text-slate-300 mb-1">
+                Longitude
+              </label>
+              <input
+                type="text"
+                name="longitude"
+                id="longitude"
+                value={formData.longitude}
+                onChange={handleChange}
+                placeholder="e.g., 98.7654"
+                className="mt-1 block w-full px-3 py-2 bg-slate-900/60 text-white border border-emerald-500/50 rounded-md shadow-sm focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {geoError && (
+            <div className="text-xs text-red-400 p-2 bg-red-900/20 rounded border border-red-700/50">
+              {geoError}
+            </div>
+          )}
+
+          {locationStatus === 'success' && (
+            <div className="text-xs text-emerald-400 p-2 bg-emerald-900/20 rounded border border-emerald-700/50">
+              Location successfully fetched!
+            </div>
+          )}
         </div>
 
         <div>

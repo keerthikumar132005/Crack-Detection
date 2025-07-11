@@ -7,6 +7,7 @@ import Store from './components/Store';
 import SelectModel from './components/SelectModel';
 import CrackDetectionCNN from './components/CNN/CrackDetectionCNN';
 import CrackDetectionYOLO from './components/Yolo/CrackDetectionYOLO';
+import Recommendations from './components/Recommendations/Recommendations';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/select-model" element={<SelectModel />} />
           <Route path="/compare-cnn" element={<CrackDetectionCNN />} />
           <Route path="/compare-yolo" element={<CrackDetectionYOLO />} />
+          <Route path="/recommendations" element={<Recommendations />} />
         </Routes>
       </main>
     </div>

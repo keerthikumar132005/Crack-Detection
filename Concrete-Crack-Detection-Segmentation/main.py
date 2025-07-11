@@ -219,7 +219,6 @@ async def get_recommendation_post(payload: dict = Body(...)):
 
         # Step 2: Generate recommendations
         recommended_methods = recommend_healing_agent(crack_width, temperature, humidity, synthetic_df)
-
         # Step 3: Return full response
         return {
             "crack_width_mm": crack_width,

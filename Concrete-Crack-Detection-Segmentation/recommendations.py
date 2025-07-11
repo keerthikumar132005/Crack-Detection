@@ -81,7 +81,7 @@ def recommend_healing_agent(crack_width, temperature, humidity, synthetic_data_d
         
         if not broad_match_techniques:
             print(f"DEBUG: No technique found for crack width {crack_width} mm even with broad match.")
-            return "No suitable technique found for the given crack width. Please re-evaluate the crack size."
+            return ["No suitable technique found for the given crack width. Please re-evaluate the crack size."]
         
         # Filter the synthetic data to include only these broadly matching techniques
         suitable_techniques = synthetic_data_df[
@@ -109,11 +109,10 @@ def recommend_healing_agent(crack_width, temperature, humidity, synthetic_data_d
                 "Base_Healing_Percentage": raw_ranges["base_healing_pct"],
                 "Cost_USD_per_sqm": raw_ranges["cost"]
             })
-            
+           
     if not final_recommendations_info:
         print(f"DEBUG: No technique found matching temperature {temperature}°C and humidity {humidity}% RH among crack-suitable techniques.")
-        return "No technique found that matches all criteria (crack width, temperature, and humidity)."
-    
+        return ["No technique found that matches all criteria (crack width, temperature, and humidity)."]
     # Convert to DataFrame for easier sorting
     recommendations_df = pd.DataFrame(final_recommendations_info)
     
@@ -125,4 +124,4 @@ def recommend_healing_agent(crack_width, temperature, humidity, synthetic_data_d
 
     # Extract just the technique names in sorted order and return only the top 3
     sorted_recommendations = recommendations_df["Technique"].tolist()
-    return sorted_recommendations[:3] # Return only the top 3
+    return sorted_recommendations
