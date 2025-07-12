@@ -8,6 +8,7 @@ const api_url = process.env.REACT_APP_API_URL;
 function CombinedCrackDetection() {  
   const navigate = useNavigate();
   const [predictionData, setPredictionData] = useState({ cnn: null, yolo: null });
+  const [loading,setLoading]=useState(null)
   const [imagePreview, setImagePreview] = useState(null);
   const [isPredicting, setIsPredicting] = useState(false);
   const [recommendations, setRecommendations] = useState({
@@ -73,6 +74,7 @@ function CombinedCrackDetection() {
   const handlePrediction = async (formData, dimensions) => {
     try {
       setIsPredicting(true);
+      setLoading(true)
       const file = formData.get("file");
       if (!file) throw new Error('No file found in form data');
 
@@ -133,6 +135,7 @@ function CombinedCrackDetection() {
           sum + pred.bounding_box_mm.width, 0) / yoloData.predictions.length;
         fetchRecommendations(avgWidth, 'yolo');
       }
+      setLoading(false)
 
     } catch (err) {
       console.error('Prediction Error:', err);
@@ -303,6 +306,7 @@ function CombinedCrackDetection() {
             onFileSelect={storeImage}
             fetchFromSupabase={true}
             setLocation={setLocation}
+            loading={loading}
           />
         </div>
       </div>

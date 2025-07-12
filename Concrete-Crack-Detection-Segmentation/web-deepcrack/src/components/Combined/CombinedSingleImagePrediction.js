@@ -7,7 +7,8 @@ function CombinedSingleImagePrediction({
   onDimensionsChange, 
   onFileSelect,
   fetchFromSupabase = false ,
-  setLocation
+  setLocation,
+  loading
 }) {
   const [isFilePicked, setIsFilePicked] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -211,7 +212,7 @@ function CombinedSingleImagePrediction({
           disabled={fetchFromSupabase ? !selectedCrack : !isFilePicked}
           className="w-full py-2 mt-4 rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold hover:opacity-90"
         >
-          Analyze (CNN + YOLO)
+          {loading ? 'Analyzing...' : 'Analyze (CNN + YOLO)'}
         </button>
       </form>
 
